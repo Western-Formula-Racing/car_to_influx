@@ -1,7 +1,41 @@
-# car_to_influx
-Convert data from the car to influxdb inputs 
+# Formula Racing Data Acquisition and Processing
 
-# Handle GNSS Data
+## Overview
+
+This project focuses on capturing, processing, and storing vehicle telemetry data from a racing vehicle using a Raspberry Pi and server-side data processing.
+
+## Data Sources
+
+- **CAN Bus**: Primary source of vehicle sensor data
+- **GNSS (GPS)**: Location and timing information
+
+## Data Acquisition (On-Vehicle)
+
+### CAN Bus Data
+
+- Raspberry Pi captures raw CAN messages
+- Each message includes:
+  - Channel ID
+  - Payload
+  - Relative timestamp
+
+### GNSS Data
+
+- Captured at 18 Hz frequency
+- Provides absolute timestamp
+- Uses u-blox module with AT commands for data retrieval
+
+## Data Processing Strategy
+
+### On-Vehicle Processing
+
+1. placeholder 
+### Server-Side Processing
+
+1. Receive data package from vehicle
+2. 
+
+### Handle GNSS Data
 example:
 send ```AT+UGNMEA?```
 
