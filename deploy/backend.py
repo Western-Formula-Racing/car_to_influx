@@ -1,11 +1,25 @@
 from flask import Flask, request, jsonify, send_from_directory
 import cantools
 import os
-import re
 from datetime import datetime
 # Importing the functions from readCanoptimized.py
 from readCANOptimized import parse_can_message, process_lines
+import influxdb_client
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
 
+# Set up InfluxDB credentials
+token = os.environ.get("INFLUXDB_TOKEN")
+org = "WFR"
+url = "http://localhost:8086"
+bucket = "canBus"
+write_client = influxdb_client.InfluxDBClient(url=url, token=token, org=org)
+
+token = os.environ.get("INFLUXDB_TOKEN")
+print(f"InfluxDB Token: {token}")  # Debugging: Check the token value
+
+
+# Initialize Flask app
 app = Flask(__name__)
 
 # Define paths for the error log and CAN database
@@ -39,15 +53,32 @@ def serve_index():
     except Exception as e:
         return jsonify({"error": f"Error serving index.html: {str(e)}"}), 404
 
+# Function to write processed CAN data to InfluxDB
+def write_to_influxdb(can_data, bucket):
+    try:
+        # Write the point to the database
+        write_api = write_client.write_api(write_options=SYNCHRONOUS)
+        write_api.write(bucket=bucket, org=org, record=can_data)
+    except Exception as e:
+        print(f"Error writing to InfluxDB: {e}")
+
 # API endpoint to process CAN data
 @app.route('/process', methods=['POST'])
 def process():
     data = request.get_json()
     input_text = data.get('input', '')
+
     if input_text:
         # Process the lines using the imported functions
         lines = input_text.split('\n')
         output_strings = process_lines(lines, db)  # Call the process_lines function from readCanoptimized.py
+
+        # Assuming the output_strings contain a list of CAN message data
+        for line in output_strings:
+            print(line)
+            # Write each CAN message data to InfluxDB
+            write_to_influxdb(line, bucket)
+
         return jsonify({"output": output_strings})
     else:
         return jsonify({"error": "No input provided"}), 400

@@ -46,18 +46,19 @@ def parse_can_message(line, db):
             unit = "N/A"
 
         now = datetime.now()
-        unix_time_ns = int(now.timestamp() * 1e9)
-        formatted_string = (
-            f"canBus,"
-            f"signalName={signal_name},"
-            f"description={description},"
-            f"messageName={message.name},"
-            f"RawCAN={can_id} "
-            f"sensorReading={value},"
-            f"unit={unit},"
-            f"relativeTime={timestamp} "
-            f"time={unix_time_ns}"
+        unix_time_ns = int(now.timestamp() * 1e3)
+        #TODO: fix the fstring for influx
+        formatted_string = ("""canBus,signalName={},description={},messageName={},rawCAN={} sensorReading={},unit="{}" time={}"""
+        ).format(
+            signal_name,
+            description,
+            message.name,
+            can_id,
+            value,
+            unit,
+            unix_time_ns
         )
+
         output.append(formatted_string)
     return output
 
