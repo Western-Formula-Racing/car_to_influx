@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfluxDB String Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            width: 300px;
+            margin: auto;
+        }
+        .input-box {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .output-box {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #f4f4f4;
+            font-family: monospace;
+            white-space: pre-wrap;
+            height: 200px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px;
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .status {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .status.healthy {
+            color: green;
+        }
+        .status.unhealthy {
+            color: red;
+        }
+        #copyBtn {
+            width: 100%;
+            background-color: #2196F3;
+        }
+        #copyBtn:hover {
+            background-color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>InfluxDB String Generator</h2>
+    <textarea id="inputText" class="input-box" rows="4" placeholder="Enter your data..."></textarea>
+    <button id="submitBtn">Generate Influx String</button>
+
+    <textarea id="outputBox" class="output-box" readonly></textarea>
+    <button id="copyBtn">Copy Output</button>
+
+    <div id="status" class="status">Checking backend status...</div>
+</div>
+
+<script>
+    // This function will handle sending data to your local backend and displaying the response
+    document.getElementById('submitBtn').addEventListener('click', function() {
+        var inputText = document.getElementById('inputText').value;
+        if (inputText.trim() === "") {
+            alert("Please enter some text!");
+            return;
+        }
+
+        // Send POST request to local server
+        fetch('http://127.0.0.1:5000/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ input: inputText })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.output) {
+                document.getElementById('outputBox').textContent = data.output.join('\n'); // Update output box with response
+            } else {
+                document.getElementById('outputBox').textContent = data.error;
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred. Please try again.");
+        });
+    });
+
+    // Check the backend health on page load
+    function checkBackendStatus() {
+        fetch('http://127.0.0.1:5000/health')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'Healthy') {
+                    document.getElementById('status').textContent = 'Backend is healthy';
+                    document.getElementById('status').classList.add('healthy');
+                    document.getElementById('status').classList.remove('unhealthy');
+                } else {
+                    document.getElementById('status').textContent = 'Backend is down';
+                    document.getElementById('status').classList.add('unhealthy');
+                    document.getElementById('status').classList.remove('healthy');
+                }
+            })
+            .catch(error => {
+                console.error("Error checking backend status:", error);
+                document.getElementById('status').textContent = 'Backend is down';
+                document.getElementById('status').classList.add('unhealthy');
+                document.getElementById('status').classList.remove('healthy');
+            });
+    }
+
+    // Check the backend status when the page loads
+    checkBackendStatus();
+
+    // Copy output to clipboard
+    document.getElementById('copyBtn').addEventListener('click', function() {
+        var outputText = document.getElementById('outputBox');
+        outputText.select();
+        document.execCommand('copy'); // Copy to clipboard
+        alert('Output copied to clipboard!');
+    });
+</script>
+
+</body>
+</html>

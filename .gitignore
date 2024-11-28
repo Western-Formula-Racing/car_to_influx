@@ -162,3 +162,5 @@ cython_debug/
 .idea/
 
 .DS_Store
+testing_data/CanTraceJuly11_errors.txt
+testing_data/CanTraceJuly11_parsed.txt
