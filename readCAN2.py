@@ -1,11 +1,9 @@
 from influxdb_client import Point
-from datetime import datetime
+from datetime import datetime, timezone
 import cantools
 import re
 
 def parse_can_message(line, db):
-    print("\nInput: " + line)
-
     """
     Parse a CAN message line, decode it, and return a list of InfluxDB Points.
 
@@ -44,29 +42,35 @@ def parse_can_message(line, db):
             signal = message.get_signal_by_name(signal_name)
             description = signal.comment if signal.comment else "No description available"
             unit = signal.unit if signal.unit else "N/A"
+            # Get the label (the name of the value) from NamedSignalValue
+            if isinstance(value, cantools.database.can.signal.NamedSignalValue):
+                signal_label = value.name  # The label (e.g., "Drive")
+                raw_value = float(value.value)   # The raw numeric value (e.g., 1)
+            else:
+                signal_label = str(value)  # For non-enumerated signals
+                raw_value = float(value)   # Store the raw numeric value
+
         except AttributeError:
             description = "No description available"
             unit = "N/A"
+            signal_label = str(value)
+            raw_value = float(value)
 
-        # Convert value to float if possible
-        if isinstance(value, cantools.database.can.signal.NamedSignalValue):
-            sensor_value = float(value.value)  # Use the numeric representation
-        else:
-            sensor_value = float(value)  # Use directly if already numeric
+        # UTC Time
+        now = datetime.now(timezone.utc)
 
-        now = datetime.now()
         point = (
-            Point("canBus1")
+            Point("canBus")
             .tag("signalName", signal_name)
             .tag("messageName", message.name)
             .tag("rawCAN", can_id)
-            .field("sensorReading", sensor_value)  # Use the converted value
+            .field("sensorReading", raw_value)  # Store the numeric value
             .field("unit", unit)
             .field("description", description)
+            .field("signalLabel", signal_label)  # Store the label (description)
             .time(now)
         )
         points.append(point)
-        print(point)
 
     return points
 
@@ -112,6 +116,58 @@ def main():
 
     # Read CAN message lines
     with open('testing_data/small_CanTrace.txt', 'r') as f:
+        lines = f.read().split('\n')
+
+    # Process lines and write to InfluxDB
+    process_lines(lines, db, write_api, bucket)
+    print("Data successfully written to InfluxDB.")
+
+if __name__ == "__main__":
+    main()
+
+
+def process_lines(lines, db, write_api, bucket):
+    """
+    Process a list of CAN message lines sequentially and write Points to InfluxDB.
+
+    Args:
+        lines (list): List of CAN message lines as strings.
+        db (cantools.database.Database): Loaded CAN database.
+        write_api (influxdb_client.WriteApi): InfluxDB Write API.
+        bucket (str): InfluxDB bucket name.
+    """
+    for idx, line in enumerate(lines):
+        try:
+            points = parse_can_message(line, db)
+            write_api.write(bucket=bucket, org="WFR", record=points)
+        except Exception as e:
+            print(f"Error processing line {idx}: {str(e)}")
+
+def main():
+    from influxdb_client import InfluxDBClient
+    from influxdb_client.client.write_api import SYNCHRONOUS
+
+    # Load CAN database
+    dbc_file = 'testing_data/20240129 Gen5 CAN DB.dbc'
+    try:
+        db = cantools.database.load_file(dbc_file)
+        print(f"Loaded DBC file: {dbc_file}")
+    except Exception as e:
+        print(f"Failed to load DBC file: {str(e)}")
+        return
+
+    # InfluxDB setup
+    influx_url = "http://localhost:8086"  # Replace with your InfluxDB URL
+    # token = read txt file influx_token.txt
+    with open('influx_token.txt', 'r') as f:
+        token = f.read().strip()
+
+    bucket = "ourCar"
+    client = InfluxDBClient(url=influx_url, token=token, org="WFR")
+    write_api = client.write_api(write_options=SYNCHRONOUS)
+
+    # Read CAN message lines
+    with open('testing_data/CanTraceJuly11.txt', 'r') as f:
         lines = f.read().split('\n')
 
     # Process lines and write to InfluxDB
