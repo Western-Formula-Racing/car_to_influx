@@ -107,6 +107,7 @@
         fetch('http://127.0.0.1:5000/health')
             .then(response => response.json())
             .then(data => {
+                console.log("Datais: " + data.status);
                 if (data.status === 'Healthy') {
                     document.getElementById('status').textContent = 'Backend is healthy';
                     document.getElementById('status').classList.add('healthy');
