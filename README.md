@@ -61,3 +61,11 @@ fix status 1/True for A, valid data, mode A autonomous GNSS fix mode
 | Mode                | A               | Autonomous mode.                              | A (Autonomous), D (Differential), E (Estimated). |
 | Navigation Warn     | V               | Warning: No valid GNSS data.                  | V (Warning), N (No warning)              |
 | Checksum            | *57             | Data integrity verification.                  | Any valid checksum based on NMEA format.  |
+
+
+
+
+
+# Claude Demo
+
+https://claude.site/artifacts/539e9a55-276b-46d5-90e8-9751d9ff3aee
