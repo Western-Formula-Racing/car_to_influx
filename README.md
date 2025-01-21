@@ -69,3 +69,9 @@ fix status 1/True for A, valid data, mode A autonomous GNSS fix mode
 # Claude Demo
 
 https://claude.site/artifacts/539e9a55-276b-46d5-90e8-9751d9ff3aee
+
+
+
+# Claude React Wrapper
+
+https://github.com/claudio-silva/claude-artifact-runner
