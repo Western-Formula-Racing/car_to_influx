@@ -124,7 +124,7 @@ def main():
         return
 
     # InfluxDB setup with batching options
-    influx_url = "http://35.183.158.105:8086"  # Replace with your InfluxDB URL
+    influx_url = "http://3.98.181.12:8086"  # Replace with your InfluxDB URL
     with open('influx_token.txt', 'r') as f:
         token = f.read().strip()
 
